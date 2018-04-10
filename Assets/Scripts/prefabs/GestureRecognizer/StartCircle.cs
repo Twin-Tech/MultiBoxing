@@ -21,6 +21,8 @@ public class StartCircle : MonoBehaviour {
     float TimeCount = 0f;
     public GeneralData GD;
 
+    public MapJoins MJ;
+
     private Dictionary<int, Kinect.JointType> _JointMap = new Dictionary<int, Kinect.JointType>()
     {
         { 14, Kinect.JointType.AnkleLeft },
@@ -67,8 +69,8 @@ public class StartCircle : MonoBehaviour {
         if (player != null && SecretData.FixedJoint != -1)
         {
             Kinect.JointType FixedJoint = _JointMap[SecretData.FixedJoint];
-            Transform FixedJointT = player.transform.Find(FixedJoint.ToString());
-            Transform SpineBaseT = player.transform.Find("SpineBase");
+            Transform FixedJointT = player.transform.Find("Skeleton" + FixedJoint.ToString());
+            Transform SpineBaseT = player.transform.Find("Skeleton" + "SpineBase");
             Vector3 NewFixedJointPosition = FixedJointT.position;
             Vector3 NewSpineBasePosition = SpineBaseT.position;
             Vector3 BufferPosition = new Vector3(0.01f,0.01f,0.01f);
@@ -89,7 +91,7 @@ public class StartCircle : MonoBehaviour {
                     {
                         xfactor = 0.2f;
                     }
-                    if (FixedJointChange)
+                    if (!GD.gestureName.ToLower().Equals("none") && FixedJointChange)
                     {
                         Vector3 playerPosition = player.transform.position;
                         Vector3 NewCirclePosition = new Vector3(playerPosition.x + xfactor, GroundPlane.position.y + yfactor, playerPosition.z + zfactor);
@@ -118,6 +120,8 @@ public class StartCircle : MonoBehaviour {
         if (other.CompareTag(TagName))
         {
             CanStart = true;
+            MJ.CanWork = true;
+            MJ.StartCoroutine("StartTimer");
         }
     }
     private void OnTriggerExit(Collider other)
@@ -125,6 +129,7 @@ public class StartCircle : MonoBehaviour {
         if (other.CompareTag(TagName))
         {
             CanStart = false;
+            MJ.CanWork = false;
         }
     }
     private void OnTriggerStay(Collider other)
@@ -132,6 +137,7 @@ public class StartCircle : MonoBehaviour {
         if (other.CompareTag(TagName) && !CanStart)
         {
             CanStart = true;
+            MJ.CanWork = true;
         }
     }
 
@@ -158,6 +164,7 @@ public class StartCircle : MonoBehaviour {
     public void SetInitialPosistion()
     {
         transform.position = InitialPosition;
+        //transform.position = getInitialPosition();
         transform.rotation = InitialRotation;
     }
 
@@ -168,4 +175,18 @@ public class StartCircle : MonoBehaviour {
         return Quaternion.Euler(newEuler);
     }
 
+    private Vector3 getInitialPosition()
+    {
+        return new Vector3(InitialPosition.x, GroundPlane.position.y + 0.01f, InitialPosition.z);
+    }
+
+    public Vector3 GetPostion()
+    {
+        return transform.position;
+    }
+
+    public void setPosition(Vector3 position)
+    {
+        transform.position = position;
+    }
 }

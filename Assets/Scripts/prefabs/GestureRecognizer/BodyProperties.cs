@@ -27,6 +27,9 @@ public class BodyProperties : MonoBehaviour
     public GameObject ParentCircle;
     private StartCircle SC;
     List<GameObject> colls;
+
+    public MapJoins MJ;
+
     // Use this for initialization
     void Start()
     {
@@ -40,14 +43,14 @@ public class BodyProperties : MonoBehaviour
         SC.GD = GD;
         SD = new SecretData();
         
-        GD.gestureName = "highKnees";
+        GD.gestureName = "none";
         firstread = true;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (startGame && GD.gestureName!=null)
+        if (startGame && GD.gestureName!=null && !GD.gestureName.ToLower().Equals("none"))
         {
             if (!InitializeObj)
             {
@@ -62,14 +65,16 @@ public class BodyProperties : MonoBehaviour
                     approximation++;      
                     if (approximation > NoOfInitializationFrame)
                     {
-                        initialRotationZ = getShoulderZ();
-                        initialRotationVector = getShoulderPosition();
+                        //initialRotationZ = getShoulderZ();
+                        //initialRotationVector = getShoulderPosition();
                         countinst++;
                         InitializeObj = true;
                         leftarmLength /= NoOfInitializationFrame;
                         rightarmLength /= NoOfInitializationFrame;
-                        CreateCoins();
-                        SD.rate = Convert.ToInt32((0.75 * SD.totalFrames) / SD.totalInitial);
+                        Debug.Log("LeftArmLength:"+leftarmLength);
+                        Debug.Log("RightArmLength"+rightarmLength);
+                        //CreateCoins();
+                        //SD.rate = Convert.ToInt32((0.75 * SD.totalFrames) / SD.totalInitial);
                     }
                 }
             }
@@ -83,8 +88,8 @@ public class BodyProperties : MonoBehaviour
                 }
                 if (InitializeObj)
                 {
-                    rotation = getRotation();
-                    getRotationDirection();
+                    //rotation = getRotation();
+                    //getRotationDirection();
                     //Debug.Log(rotation + ":" + rotationDirection);
                 }
                 SD.noOfFrames++;
@@ -117,40 +122,6 @@ public class BodyProperties : MonoBehaviour
             }
         }
     }
-    public bool checkCenter()
-    {
-        JointsProperties spine = GameObject.Find("SpineBase").GetComponent<JointsProperties>();
-        JointsProperties footLeft = GameObject.Find("FootLeft").GetComponent<JointsProperties>();
-        Text display = GameObject.Find("Text 5").GetComponent<Text>();
-        
-        if (spine.position.x < -0.22)
-        {
-            display.text = "Move towards your right.";
-            return false;
-        }
-        else if (spine.position.x > 0)
-        {
-            display.text = "Move towards your left.";
-            return false;
-        }
-        else if (spine.position.z < 2.4)
-        {
-            display.text = "Move back";
-            return false;
-        }
-        else if (spine.position.z > 2.6 && !GD.gestureName.Equals("squats"))
-        {
-           
-                display.text = "Come forward";
-                return false;
-            
-        }
-        else
-        {
-            display.text = "";
-            return true;
-        }
-    }
     public void checkGesture()
     {
         /*Debug.Log("NoOfFrames: "+SD.noOfFrames);
@@ -168,9 +139,9 @@ public class BodyProperties : MonoBehaviour
             }
         }
         //Debug.Log("GestureStatus: " + GD.gestureTrue);
-        GameObject statusBox = GameObject.Find("Text 1");
-        Text status = statusBox.GetComponent<Text>();
-        status.text = GD.gestureTrue.ToString();
+        //GameObject statusBox = GameObject.Find("Text 1");
+        //Text status = statusBox.GetComponent<Text>();
+        //status.text = GD.gestureTrue.ToString();
     }
     public void getRotationDirection()
     {
@@ -189,9 +160,9 @@ public class BodyProperties : MonoBehaviour
     }
     public Vector2 getShoulderPosition()
     {
-        GameObject shoulder = GameObject.Find("ShoulderRight");
+        GameObject shoulder = GameObject.Find("Skeleton" + "ShoulderRight");
         JointsProperties jpshoulder = shoulder.GetComponent<JointsProperties>();
-        GameObject neck = GameObject.Find("SpineShoulder");
+        GameObject neck = GameObject.Find("Skeleton" + "SpineShoulder");
         JointsProperties jpspine = neck.GetComponent<JointsProperties>();
         Vector3 ans = jpshoulder.position - jpspine.position;
         Vector2 answer;
@@ -201,7 +172,7 @@ public class BodyProperties : MonoBehaviour
     }
     public float getShoulderZ()
     {
-        GameObject shoulder = GameObject.Find("ShoulderRight");
+        GameObject shoulder = GameObject.Find("Skeleton" + "ShoulderRight");
         JointsProperties jpshoulder = shoulder.GetComponent<JointsProperties>();
         return jpshoulder.position.z;
     }
@@ -237,11 +208,11 @@ public class BodyProperties : MonoBehaviour
 
     public void ResetColliders()
     {
-       // Debug.Log(SD.InitialCollisions + "," + SD.totalInitial);
+        Debug.Log("Reseting colliders");
         if (SD.InitialCollisions >= (2 * SD.totalInitial))
         {
             CalculateAccuracy();
-
+            return;
             SD.Noofcollisions =  SD.totalInitial;
             SD.InitialCollisions = SD.totalInitial;
             SD.stop = DateTime.Now;
@@ -255,10 +226,13 @@ public class BodyProperties : MonoBehaviour
             {
                 c.flag = true;
             }
+
+
         }
     }
     public void updateGesture(string gest)
     {
+        
         SD.noOfFrames = 0;
         SD.totalInitial = 0;
         SD.NoOfCoins = 0;
@@ -274,8 +248,10 @@ public class BodyProperties : MonoBehaviour
                 Destroy(g);
         }
         colls.Clear();
-        CreateCoins();
-        SD.rate = Convert.ToInt32((0.75 * SD.totalFrames) / SD.totalInitial);
+        if (!GD.gestureName.ToLower().Equals("none"))
+        {
+            CreateCoins();
+        }
         GameObject skel = GameObject.Find("skeleton");
         colloideDetect[] cd = skel.GetComponentsInChildren<colloideDetect>();
         foreach (var c in cd)
@@ -301,11 +277,16 @@ public class BodyProperties : MonoBehaviour
 
     public void CalculateAccuracy()
     {
-        SD.MaxFramesAfterCollision = 30;
-        SD.acc = GameObject.Find("Text 2");
-        Text abc = SD.acc.GetComponent<Text>();
+        Debug.Log("Calculating Accuracy");
+        //SD.MaxFramesAfterCollision = 30;
+        //SD.acc = GameObject.Find("Text 2");
+        //Text abc = SD.acc.GetComponent<Text>();
         GD.accuracy = (SD.Noofcollisions / SD.totalcollisions) * 100;
-        Debug.Log("Initial Max: " + GD.MaxFrameTime);
+        MJ.GameMainScreen.Accuracy = (int) GD.accuracy;
+        MJ.isAccuracy = true;
+        MJ.isPower = false;
+        MJ.Map();
+        return;
         if(GD.accuracy > 50 && GD.FrameTime < (GD.MaxFrameTime + (GD.MaxFrameTime * 50 / 100)))
         {
             if(GD.FrameTime > GD.MinFrameTime)
@@ -319,7 +300,7 @@ public class BodyProperties : MonoBehaviour
         }
         Debug.Log("Final Max: " + GD.MaxFrameTime);
         GD.FrameTime = 0f;
-        abc.text = GD.accuracy.ToString();
+        //abc.text = GD.accuracy.ToString();
         GameData.Current.UpdateGestureData(GD.gestureName, GD.accuracy);
         Debug.Log(GD.accuracy);
     }
@@ -330,17 +311,17 @@ public class BodyProperties : MonoBehaviour
             case "left":
             case "Left":
             case "LEFT":
-                GameObject leftShoulder = transform.Find("ShoulderLeft").gameObject;
-                GameObject leftElbow = transform.Find("ElbowLeft").gameObject;
-                GameObject leftWrist = transform.Find("WristLeft").gameObject;
+                GameObject leftShoulder = transform.Find("SkeletonShoulderLeft").gameObject;
+                GameObject leftElbow = transform.Find("SkeletonElbowLeft").gameObject;
+                GameObject leftWrist = transform.Find("SkeletonWristLeft").gameObject;
                 return Vector3.Distance(leftShoulder.transform.position, leftElbow.transform.position) + Vector3.Distance(leftElbow.transform.position, leftWrist.transform.position);
                 break;
             case "right":
             case "Right":
             case "RIGHT":
-                GameObject rightShoulder = transform.Find("ShoulderRight").gameObject;
-                GameObject rightElbow = transform.Find("ElbowRight").gameObject;
-                GameObject rightWrist = transform.Find("WristRight").gameObject;
+                GameObject rightShoulder = transform.Find("SkeletonShoulderRight").gameObject;
+                GameObject rightElbow = transform.Find("SkeletonElbowRight").gameObject;
+                GameObject rightWrist = transform.Find("SkeletonWristRight").gameObject;
                 return Vector3.Distance(rightShoulder.transform.position, rightElbow.transform.position) + Vector3.Distance(rightElbow.transform.position, rightWrist.transform.position);
                 break;
             default:
@@ -355,14 +336,14 @@ public class BodyProperties : MonoBehaviour
             case "left":
             case "Left":
             case "LEFT":
-                GameObject leftFoot = transform.Find("FootLeft").gameObject;
+                GameObject leftFoot = transform.Find("SkeletonFootLeft").gameObject;
                 JointsProperties LFJP = leftFoot.GetComponent<JointsProperties>();
                 leftFootHeight = leftFootHeight > (float)(LFJP.distanceFromGround) ? (float)LFJP.distanceFromGround : leftFootHeight;
                 break;
             case "right":
             case "Right":
             case "RIGHT":
-                GameObject rightFoot = transform.Find("FootRight").gameObject;
+                GameObject rightFoot = transform.Find("SkeletonFootRight").gameObject;
                 JointsProperties RFJP = rightFoot.GetComponent<JointsProperties>();
                 rightFootHeight = rightFootHeight > (float)(RFJP.distanceFromGround) ? (float)RFJP.distanceFromGround : rightFootHeight;
                 break;
@@ -384,23 +365,37 @@ public class BodyProperties : MonoBehaviour
     }
     public void CreateCoins()
     {
+        Debug.Log(GD.gestureName);
         double angle = 0;
         if (firstread)
         {
-            GameObject head = transform.Find("Head").gameObject;
-            GameObject shoulderLeft = transform.Find("ShoulderLeft").gameObject;
-            GameObject shoulderRight = transform.Find("ShoulderRight").gameObject;
-            GameObject foot = transform.Find("FootLeft").gameObject;
+            GameObject head = transform.Find("SkeletonHead").gameObject;
+            GameObject shoulderLeft = transform.Find("SkeletonShoulderLeft").gameObject;
+            GameObject shoulderRight = transform.Find("SkeletonShoulderRight").gameObject;
+            GameObject foot = transform.Find("SkeletonFootLeft").gameObject;
             JointsProperties jphead = head.GetComponent<JointsProperties>();
             JointsProperties jpshoulderl = shoulderLeft.GetComponent<JointsProperties>();
             JointsProperties jpshoulderr = shoulderRight.GetComponent<JointsProperties>();
             JointsProperties jpfoot = foot.GetComponent<JointsProperties>();
             SD.realheight = jphead.position.y;
             SD.realshoulder = Vector3.Distance(jpshoulderl.position, jpshoulderr.position);
+            if(leftarmLength == 0f)
+            {
+                leftarmLength = FindHandLength("left");
+            }
+            if (rightarmLength == 0f)
+            {
+                rightarmLength = FindHandLength("Right");
+            }
             SD.realhandlength = (rightarmLength + leftarmLength) / 2;
             SD.realfootlevel = jpfoot.position.y;
+            Debug.Log("RealHeight:" + SD.realheight);
+            Debug.Log("RealShoulder:" + SD.realshoulder);
+            Debug.Log("RealHandLength:" + SD.realhandlength);
+            Debug.Log("RealFootLevel:" + SD.realfootlevel);
             firstread = false;
         }
+        Vector3 CurrentStartCirclePosition = SC.GetPostion();
         SC.SetInitialPosistion();
         XmlDocument doc = new XmlDocument();
         doc.Load("C:\\Users\\rajan\\Desktop\\" + GD.gestureName + ".xml");
@@ -410,6 +405,7 @@ public class BodyProperties : MonoBehaviour
             if (jointname == "HandLength")
             {
                 SD.handlengthdelta = SD.realhandlength - float.Parse(node.ChildNodes[0].InnerText);
+                Debug.Log("HandLengthde lta:" + SD.handlengthdelta);
             }
             else if (jointname == "FixedJoint")
             {
@@ -418,14 +414,17 @@ public class BodyProperties : MonoBehaviour
             else if (jointname == "HeadPos")
             {
                 SD.heightdelta = SD.realheight - float.Parse(node.ChildNodes[0].InnerText);
+                Debug.Log("HeightDelta:" + SD.heightdelta);
             }
             else if (jointname == "ShoulderWidth")
             {
                 SD.shoulderdelta = (SD.realshoulder - float.Parse(node.FirstChild.InnerText)) / 2;
+                Debug.Log("ShoulderDelta:" + SD.shoulderdelta);
             }
             else if (jointname == "AngleAdjust")
             {
                 SD.angleadjust = float.Parse(node.FirstChild.InnerText) - SD.realfootlevel;
+                Debug.Log("AngleAdjust:" + SD.angleadjust);
             }
             else if (jointname == "TotalCollisions")
             {
@@ -442,7 +441,7 @@ public class BodyProperties : MonoBehaviour
                 GD.MinFrameTime = GD.MaxFrameTime / 4;
             }
             else if (jointname != "ValidAngle")
-            {
+            { 
                 if (jointname.Contains("Initial"))
                     SD.totalInitial++;
                 float x, y, z;
@@ -503,6 +502,7 @@ public class BodyProperties : MonoBehaviour
                 SD.NoOfCoins++;
             }
         }
+        SC.setPosition(CurrentStartCirclePosition);
     }
     public Vector3 PlaceCoinsIn2D(double angle, Vector3 origin, float radius, int angleDeviation)
     {
@@ -521,11 +521,11 @@ public class BodyProperties : MonoBehaviour
 
     public bool CheckLegAboveGround()
     {
-        GameObject leftFoot = transform.Find("FootLeft").gameObject;
+        GameObject leftFoot = transform.Find("SkeletonFootLeft").gameObject;
         JointsProperties LFJP = leftFoot.GetComponent<JointsProperties>();
         float leftLegHeight = (float)LFJP.distanceFromGround;
 
-        GameObject rightFoot = transform.Find("FootRight").gameObject;
+        GameObject rightFoot = transform.Find("SkeletonFootRight").gameObject;
         JointsProperties RFJP = rightFoot.GetComponent<JointsProperties>();
         float rightLegHeight = (float)RFJP.distanceFromGround;
 
@@ -543,31 +543,31 @@ public class BodyProperties : MonoBehaviour
     }
     /* public double getangle()
      {
-         GameObject rightElbow = transform.Find("ElbowRight").gameObject;
-         GameObject rightShoulder = transform.Find("ShoulderRight").gameObject;
-         GameObject rightWrist = transform.Find("WristRight").gameObject;
+         GameObject rightElbow = transform.Find("SkeletonElbowRight").gameObject;
+         GameObject rightShoulder = transform.Find("SkeletonShoulderRight").gameObject;
+         GameObject rightWrist = transform.Find("SkeletonWristRight").gameObject;
          double armangle = CalculateAngle(rightShoulder, rightElbow, rightWrist);
          return armangle;
      }*/
     public float findDistanceBtwnFoots()
     {
-        GameObject leftFoot = transform.Find("FootLeft").gameObject;
-        GameObject rightFoot = transform.Find("FootRight").gameObject;
+        GameObject leftFoot = transform.Find("SkeletonFootLeft").gameObject;
+        GameObject rightFoot = transform.Find("SkeletonFootRight").gameObject;
 
         return CalculateDistance(leftFoot, rightFoot);
     }
 
     public bool findAngleOfHand()
     {
-        GameObject spineShoulder = transform.Find("SpineShoulder").gameObject;
+        GameObject spineShoulder = transform.Find("SkeletonSpineShoulder").gameObject;
 
-        GameObject rightShoulder = transform.Find("ShoulderRight").gameObject;
-        GameObject rightElbow = transform.Find("ElbowRight").gameObject;
-        GameObject rightWrist = transform.Find("WristRight").gameObject;
+        GameObject rightShoulder = transform.Find("SkeletonShoulderRight").gameObject;
+        GameObject rightElbow = transform.Find("SkeletonElbowRight").gameObject;
+        GameObject rightWrist = transform.Find("SkeletonWristRight").gameObject;
 
-        GameObject leftShoulder = transform.Find("ShoulderLeft").gameObject;
-        GameObject leftElbow = transform.Find("ElbowLeft").gameObject;
-        GameObject leftWrist = transform.Find("WristLeft").gameObject;
+        GameObject leftShoulder = transform.Find("SkeletonShoulderLeft").gameObject;
+        GameObject leftElbow = transform.Find("SkeletonElbowLeft").gameObject;
+        GameObject leftWrist = transform.Find("SkeletonWristLeft").gameObject;
 
         double leftarmangle = CalculateAngle(leftShoulder, leftElbow, leftWrist);
         double leftarmshoulderangle = CalculateAngle(spineShoulder, leftShoulder, leftWrist);

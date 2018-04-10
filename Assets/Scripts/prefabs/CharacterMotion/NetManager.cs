@@ -9,9 +9,15 @@ public class NetManager : NetworkManager {
 	void Start () {
         dontDestroyOnLoad = false;
         autoCreatePlayer = false;
-        networkAddress = "192.168.0.101";
+        networkAddress = "192.168.0.107";
         networkPort = 7777;
-        StartServer();	
-	}
+        StartS();
+
+    }
+
+    public void StartS()
+    {
+        StartServer();
+    }
 	
 }

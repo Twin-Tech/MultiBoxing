@@ -46,24 +46,24 @@ public class scoring : MonoBehaviour {
             }
             else if (choice == 4)
             {
-                BP.GD.gestureName = "jabs";
-                Text abc = GameObject.Find("Text 3").GetComponent<Text>();
-                abc.text = "Do " + BP.GD.gestureName;
-                BP.updateGesture("jabs");
-            }
-            else if (choice == 5)
-            {
                 BP.GD.gestureName = "rightlunges";
                 Text abc = GameObject.Find("Text 3").GetComponent<Text>();
                 abc.text = "Do " + BP.GD.gestureName;
                 BP.updateGesture("rightlunges");
             }
-            else if (choice == 6)
+            else if (choice == 5)
             {
                 BP.GD.gestureName = "leftlunges";
                 Text abc = GameObject.Find("Text 3").GetComponent<Text>();
                 abc.text = "Do " + BP.GD.gestureName;
                 BP.updateGesture("leftlunges");
+            }
+            else if (choice == 6)
+            {
+                BP.GD.gestureName = "none";
+                Text abc = GameObject.Find("Text 3").GetComponent<Text>();
+                abc.text = "Do " + BP.GD.gestureName;
+                BP.updateGesture("none");
             }
         }
     }

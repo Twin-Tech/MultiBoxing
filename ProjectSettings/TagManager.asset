@@ -3,7 +3,18 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Character
+  - PunchBags
+  - SkeletonBody
+  - HandLeft
+  - HandRight
+  - ElbowLeft
+  - ElbowRight
+  - KneeLeft
+  - KneeRight
+  - AnkleLeft
+  - AnkleRight
   layers:
   - Default
   - TransparentFX
@@ -13,7 +24,7 @@ TagManager:
   - UI
   - 
   - 
-  - 
+  - Player
   - 
   - 
   - 

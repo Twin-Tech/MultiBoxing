@@ -2,26 +2,27 @@
 using UnityEngine;
 
 public class CollideDetect : MonoBehaviour {
-    string Join_Name;
-    string Sphere_Name;
-    string T_Sphere;
-    private void OnTriggerEnter(Collider other)
-    {
 
-        GameObject GO = GameObject.Find("Jab");
-        MapJoins MJ = GO.GetComponent<MapJoins>();
-        Join_Name = MJ.JoinName();
-        Sphere_Name = MJ.SphereName();
-        if (gameObject.name.Equals(Sphere_Name)){
-            //T_Sphere = CH.Sphere();
-            if (T_Sphere != "")
+    public MapJoins MP;
+    private void OnCollisionEnter(Collision collision)
+    {
+        if(MP != null && MP.CanWork)
+        {
+            
+            if (MP.CurrentJoint != null && MP.CurrentPunchBag != null)
             {
-                //if (other.name.Contains(Join_Name) && Sphere_Name == T_Sphere)
-                if (other.name.Contains(Join_Name))
+                GameObject JointObj = collision.collider.gameObject;
+            
+                if (MP.CurrentPunchBag.Equals(gameObject) && JointObj.CompareTag( MP.SkelCharJointMap[MP.CurrentJoint]))
                 {
-                    Debug.Log("**********************************************************************************************************************************************************************************8");
-                    MJ.Map();
-                    MJ.setPower(other.gameObject);
+                    //Debug.Log(collision.gameObject + "-" + collision.collider.gameObject.name + "-" + collision.contacts + "-" + "-" + collision.impulse + "-" + collision.relativeVelocity + "-" + collision.transform + "-" + collision.rigidbody);
+                    JoinForce JF = JointObj.GetComponent<JoinForce>();
+                    float[] FV = JF.FinalVelocities.ToArray();
+                    MP.GameMainScreen.Power = (int)JF.sum / FV.Length;
+                    MP.GameMainScreen.Score += 5;
+                    MP.isAccuracy = false;
+                    MP.isPower = true;
+                    MP.Map();
                 }
             }
         }

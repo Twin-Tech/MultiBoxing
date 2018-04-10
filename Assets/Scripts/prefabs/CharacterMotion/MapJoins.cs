@@ -2,205 +2,267 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Networking;
 
-public class MapJoins : MonoBehaviour {
-    public GameObject LeftForeArm;
-    public GameObject LeftHand;
-    public GameObject RightForeArm;
-    public GameObject RightHand;
-    public GameObject LeftLeg;
-    public GameObject LeftFoot;
-    public GameObject RightLeg;
-    public GameObject RightFoot;
+public class MapJoins : NetworkBehaviour {
+    public GameObject ElbowLeft;
+    public GameObject HandLeft;
+    public GameObject ElbowRight;
+    public GameObject HandRight;
+    public GameObject KneeLeft;
+    public GameObject AnkleLeft;
+    public GameObject KneeRight;
+    public GameObject AnkleRight;
+
+    public InGameUIScript GameMainScreen;
+
+    private int gestureCount,punchCount;
+    private string GestureName;
+
+    public static Dictionary<string, int> selectedExercise;
+    public static List<string> ExerciseList;
+    public static List<string> selectedJoints;
+
+    public static int breakTime, sets;
+
+    public bool isPower, isAccuracy;
+
+    private NetworkIdentity objNetId;
 
     public readonly Dictionary<int, GameObject[]> dictionary = new Dictionary<int, GameObject[]>();
-    GameObject[] Jab_Spheres;
-    GameObject[] Join12;
-    GameObject[] Join34;
-    GameObject[] Join58;
 
-    GameObject Current_Sphere;
-    GameObject Current_Join12;
-    GameObject Current_Join34;
-    GameObject Current_Join58;
+    public readonly Dictionary<string, int> ExercisesMap = new Dictionary<string, int>()
+    {
+        {"punches", 0},
+        {"highness", 1},
+        {"jumpimgjack", 2},
+        {"squat", 3},
+        {"leftlunges", 4},
+        {"rightlunges", 5}
+    };
 
-    int object_index;
-    int Join12_index;
-    int Join34_index;
-    int Joins58_index;
-    string J_name = "";
-    string S_Name = "";
-    Renderer rend;
-    int _score;
-    public Text Score;
-    public float _Power;
-    private bool flag = true;
+    GameObject[] PunchBags;
+    GameObject[] Hand;
+    GameObject[] Elbow;
+    GameObject[] Knee;
+    GameObject[] Ankle;
+
+    public readonly Dictionary<string, GameObject> JointMap = new Dictionary<string, GameObject>();
+    public readonly Dictionary<GameObject, string> SkelCharJointMap = new Dictionary<GameObject, string>();
+    public readonly Dictionary<GameObject, GameObject[]> JointPunchBagMap = new Dictionary<GameObject, GameObject[]>();
+
+    public GameObject CurrentPunchBag;
+    public GameObject CurrentJoint;
+
+    public bool CanWork = false;
+    public bool Initialized = false; 
     
-    public Text Power;
     // Use this for initialization
     void Start () {
-        _Power = 0f;
-        _score = 0;
-        setPowerText();
-        setScoreText();
+        GameMainScreen.Power = -1;
+        GameMainScreen.Score = -1;
+        gestureCount = 0;
+        punchCount = 0;
+        GameMainScreen.Exercise = -1;
+        GestureName = "None";
+        isPower = false;
+        isAccuracy = false;
+        PunchBags = GameObject.FindGameObjectsWithTag("PunchBags");
         RandomFirst();
-        Map();
+        selectedExercise = new Dictionary<string, int>();
+        selectedJoints = new List<string>();
+        ExerciseList = new List<string>();
     }
 	
 	// Update is called once per frame
 	void Update () {
-		
+
 	}
+
+    public IEnumerator StartTimer()
+    {
+        yield return new WaitForSeconds(3);
+        Map();
+        yield break;
+    }
+
+    IEnumerator ReduceTimer()
+    {
+        while ( GameMainScreen.Time >= 0)
+        {   
+            yield return new WaitForSeconds(1);
+            GameMainScreen.Time--;
+            isPower = false;
+            isAccuracy = false;
+        }
+        Map();
+    }
      
     void RandomFirst()
     {
-        //dictionary.Add(1, new GameObject[] { HandLeft, HandRight, KneeLeft, FootLeft, KneeRight, FootLeft });
-        // dictionary.Add(2, new GameObject[] { ElbowLeft, HandLeft, ElbowRight, HandRight, KneeLeft, FootLeft, KneeRight, FootLeft });
-        // dictionary.Add(3, new GameObject[] { HandLeft, ElbowLeft, HandRight, ElbowRight });
+        Hand = new GameObject[] { PunchBags[0], PunchBags[1], PunchBags[4], PunchBags[5], PunchBags[6] };
+        Elbow = new GameObject[] { PunchBags[5], PunchBags[6] };
+        Knee = new GameObject[] { PunchBags[0], PunchBags[1], PunchBags[4] };
+        Ankle = new GameObject[] { PunchBags[2], PunchBags[3], PunchBags[4], PunchBags[5], PunchBags[6] };
 
-        Join12 = new GameObject[] { LeftHand, RightHand, LeftLeg, LeftFoot, RightLeg, RightFoot };
-        Join34 = new GameObject[] { LeftHand, LeftForeArm, RightForeArm, RightHand, LeftLeg, LeftFoot, RightLeg, RightFoot };
-        Join58 = new GameObject[] { LeftHand, LeftForeArm, RightHand, RightForeArm };
+        JointMap.Add("HandLeft", HandLeft);
+        JointMap.Add("HandRight", HandRight);
+        JointMap.Add("ElbowLeft", ElbowLeft);
+        JointMap.Add("ElbowRight", ElbowRight);
+        JointMap.Add("KneeLeft", KneeLeft);
+        JointMap.Add("KneeRight", KneeRight);
+        JointMap.Add("AnkleLeft", AnkleLeft);
+        JointMap.Add("AnkleRight", AnkleRight);
+
+        JointPunchBagMap.Add(HandLeft, Hand);
+        JointPunchBagMap.Add(HandRight, Hand);
+        JointPunchBagMap.Add(ElbowLeft, Elbow);
+        JointPunchBagMap.Add(ElbowRight, Elbow);
+        JointPunchBagMap.Add(KneeLeft, Knee);
+        JointPunchBagMap.Add(KneeRight, Knee);
+        JointPunchBagMap.Add(AnkleLeft, Ankle);
+        JointPunchBagMap.Add(AnkleRight, Ankle);
+
+        SkelCharJointMap.Add(HandLeft, "HandLeft");
+        SkelCharJointMap.Add(HandRight, "HandRight");
+        SkelCharJointMap.Add(ElbowLeft, "ElbowLeft");
+        SkelCharJointMap.Add(ElbowRight, "ElbowRight");
+        SkelCharJointMap.Add(KneeLeft, "KneeLeft");
+        SkelCharJointMap.Add(KneeRight, "KneeRight");
+        SkelCharJointMap.Add(AnkleLeft, "AnkleLeft");
+        SkelCharJointMap.Add(AnkleRight, "AnkleRight");
     }
 
     public void Map()
     {
-        if (Current_Sphere)
+        if (!CanWork || !Initialized ||!isServer)
         {
-            rend = Current_Sphere.GetComponent<Renderer>();
-            rend.material.color = Color.white;
+            return;
         }
-        if(J_name != "")
+        GameMainScreen.Time = 15;
+        StopCoroutine("ReduceTimer");
+        StartCoroutine("ReduceTimer");
+        if (CurrentPunchBag)
         {
-            if (Current_Join12)
-            {
-                rend = Current_Join12.GetComponent<Renderer>();
-                rend.material.color = Color.white;
-            }
-            if (Current_Join34)
-            {
-                rend = Current_Join34.GetComponent<Renderer>();
-                rend.material.color = Color.white;
-            }
-            if(Current_Join58)
-            {
-                rend = Current_Join58.GetComponent<Renderer>();
-                rend.material.color = Color.white;
-            }
-
-            if (J_name.Contains("LeftHand") || J_name.Contains("RightHand") || J_name.Contains("LeftFoot") || J_name.Contains("RightFoot"))
-            {
-                _score = _score + 5;
-                
-
-            }
-            else
-            {
-                _score = _score + 10;
-            }
-            GameData.Current.UpdateScore(_score);
-            setScoreText();
-
-
+            Render(CurrentPunchBag, new Color32(38, 23, 223, 255));
+            RpcRender(CurrentPunchBag, new Color32(38, 23, 223, 255));
+            CmdRender(CurrentPunchBag, new Color32(38, 23, 223, 255));
         }
-        S_Name = "";
-        J_name = "";
-        Jab_Spheres = GameObject.FindGameObjectsWithTag("Sphere");
-        object_index = Random.Range(0, Jab_Spheres.Length);
-        //Current_Sphere = Jab_Spheres[object_index];
-        if (flag)
+        if (CurrentJoint)
         {
-            object_index = 7;
-            flag = false;
+            Render(CurrentJoint, Color.white);
+            RpcRender(CurrentJoint, Color.white);
+            CmdRender(CurrentJoint, Color.white);
+        }
+        if (!isPower)
+        {
+            GameMainScreen.Power = -1;
+        }
+        if (!isAccuracy)
+        {
+            GameMainScreen.Accuracy = -1;
+        }
+        if(gestureCount > 0)
+        {
+            DoGesture(GestureName);
+        }else if(punchCount > 0)
+        {
+            DoPunches();
         }
         else
         {
-            object_index = 6;
-            flag = true;
+            int n = Random.Range(1, 2);
+            Debug.Log(n);
+            switch (n)
+            {
+                case 1 :
+                    CurrentJoint = null;
+                    CurrentPunchBag = null;
+                    int ExerciseNo = Random.Range(0, ExerciseList.Count);
+                    GestureName = ExerciseList[ExerciseNo];
+                    gestureCount = selectedExercise[GestureName];
+                    ExerciseList.Remove(GestureName);
+                    selectedExercise.Remove(GestureName);
+                    GameMainScreen.Exercise = ExercisesMap[GestureName.ToLower()];
+                    DoGesture(GestureName);
+                    break;
+                case 2 : GestureName = "None";
+                    punchCount = 5;
+                    GameMainScreen.Exercise = ExercisesMap["PUNCHES".ToLower()];
+                    DoPunches();
+                    break;
+            }
         }
-        Current_Sphere = Jab_Spheres[object_index];
-        S_Name = Current_Sphere.name;
-        rend = Current_Sphere.GetComponent<Renderer>();
-        rend.material.color = Color.red;
-
-        Debug.Log(Current_Sphere);
-        /*if (Current_Sphere.name.Contains("Sphere 1") || Current_Sphere.name.Contains("Sphere 2"))
-        {
-            Debug.Log("12");
-            Join12_index = Random.Range(0, Join12.Length);
-            Current_Join12 = Join12[Join12_index];
-            J_name = Current_Join12.name;
-            Debug.Log(J_name);
-            Render(Current_Join12);
-        }
-        else if (Current_Sphere.name.Contains("Sphere 3") || Current_Sphere.name.Contains("Sphere 4"))
-        {
-            Debug.Log("34");
-            Join34_index = Random.Range(0, Join34.Length);
-            Current_Join34 = Join34[Join34_index];
-            J_name = Current_Join34.name;
-            Debug.Log(J_name);
-            Render(Current_Join34);
-        }
-        else
-        {
-            Debug.Log("5678");
-            Joins58_index = Random.Range(0, Join58.Length);
-            Current_Join58 = Join58[Joins58_index];
-            J_name = Current_Join58.name;
-            Debug.Log(J_name);
-            Render(Current_Join58);
-        }*/
-        Joins58_index = 2;
-        Current_Join58 = Join58[Joins58_index];
-        J_name = Current_Join58.name;
-        Debug.Log(J_name);
-        Render(Current_Join58);
+        
     }
 
-    public  string JoinName()
+    [ClientRpc]
+    void RpcRender(GameObject objectname, Color color)
     {
-        return J_name;
+        objectname.GetComponent<Renderer>().material.color = color;
     }
 
-    public string SphereName()
+    [Command]
+    void CmdRender(GameObject objectname, Color color)
     {
-        return S_Name;
+        objNetId = objectname.GetComponent<NetworkIdentity>();
+        objNetId.AssignClientAuthority(connectionToClient);
+        objectname.GetComponent<Renderer>().material.color = color;
+        RpcRender(objectname, color);
+        objNetId.RemoveClientAuthority(connectionToClient);
     }
 
-    private void Render(GameObject objectname)
+    [Server]
+    void Render(GameObject objectname, Color color)
     {
-        rend = objectname.GetComponent<Renderer>();
-        rend.material.color = Color.blue;
-    }
-
-    void setScoreText()
-    {
-        Score.text = "Score : " + _score.ToString();
+        objNetId = objectname.GetComponent<NetworkIdentity>();
+        objNetId.AssignClientAuthority(connectionToClient);
+        objectname.GetComponent<Renderer>().material.color = color;
+        RpcRender(objectname, color);
+        objNetId.RemoveClientAuthority(connectionToClient);
     }
 
     public void setPower(GameObject joint)
     {
         JoinForce jf = joint.GetComponent<JoinForce>();
-        _Power = jf.P_FinalVelocity;
-        Debug.Log("Collided:"+_Power.ToString());
+        GameMainScreen.Power = (int) jf.P_FinalVelocity;
+        
+        Debug.Log("Collided:"+GameMainScreen.Power.ToString());
         float [] FV = jf.FinalVelocities.ToArray();
         int length = jf.FinalVelocities.Count;
-        Debug.Log("****************************************************************************************************************");
-        for(int i=0; i<length; i++)
-        {
-            Debug.Log("****************"+ FV[i] +"***************");
-        }
-        Debug.Log("************Sum: " + jf.sum + "****************");
-        Debug.Log("************Average: " + jf.sum / length+ "****************");
-        Debug.Log("********************************************************************************************************************");
-        _Power = jf.sum / length;
-        GameData.Current.NextPower(_Power);
-        setPowerText();
+        GameMainScreen.Power = (int) jf.sum / length;
+        GameData.Current.NextPower(GameMainScreen.Power);
+        //setPowerText();
     }
 
-    void setPowerText()
+
+    public void DoGesture(string gestureName)
     {
-        Power.text = "Power :"+ _Power.ToString();
+        BodyProperties BP = GameObject.Find("skeleton").GetComponentInChildren<BodyProperties>();
+        if(BP != null)
+        {
+            BP.updateGesture(gestureName);
+            gestureCount--;
+        }
+    }
+    public void DoPunches()
+    {
+        BodyProperties BP = GameObject.Find("skeleton").GetComponentInChildren<BodyProperties>();
+        if (BP != null)
+        {
+            BP.updateGesture("None");
+        }
+
+        CurrentJoint = JointMap[selectedJoints[Random.Range(0, selectedJoints.Count)]];
+        GameObject[] CurrentPunchBagSet = JointPunchBagMap[CurrentJoint];
+        CurrentPunchBag = CurrentPunchBagSet[Random.Range(0,CurrentPunchBagSet.Length)];
+        Render(CurrentJoint, new Color32(38, 23, 223, 255));
+        RpcRender(CurrentJoint, new Color32(38, 23, 223, 255));
+        CmdRender(CurrentJoint, new Color32(38, 23, 223, 255));
+        Render(CurrentPunchBag, Color.red);
+        RpcRender(CurrentPunchBag, Color.red);
+        CmdRender(CurrentPunchBag, Color.red);
+        
+        punchCount--;
     }
 }

@@ -11,10 +11,11 @@ public class skeleton : NetworkBehaviour
     public Material pickup;
     public GameObject BodySourceManager;
     public GameObject ground;
-    public Text[] TextArr ;
     public static float XHumanScalingFactor = 1;
     public static float YHumanScalingFactor = 1;
     public GameObject startCircle;
+
+    public MapJoins MJ;
     public Kinect.Vector4 floorClipPlane;
     public int count = 0;
 
@@ -81,19 +82,6 @@ public class skeleton : NetworkBehaviour
             return;
         }
 
-        /*floorClipPlane = _BodyManager.GetFloorClipPlane();
-       
-        Vector3 InNormal = new Vector3(floorClipPlane.X, floorClipPlane.Y, floorClipPlane.Z);
-        float floorDistance = floorClipPlane.W;
-        float tiltAngle = (float) (Math.Atan(InNormal.z / InNormal.y) * (180.0 / Math.PI));
-        ground.transform.position = new Vector3(0, 0 - (floorClipPlane.W * YHumanScalingFactor), 0);
-        //ground.transform.position = new Vector3(0, foot.transform.position.y, 0);
-        //winText.text = floorClipPlane.W + "-" + tiltAngle;
-
-        ground.transform.rotation = Quaternion.AngleAxis(tiltAngle, Vector3.down);
-        */
-
-
         List<ulong> trackedIds = new List<ulong>();
         foreach (var body in data)
         {
@@ -135,7 +123,7 @@ public class skeleton : NetworkBehaviour
                     _Bodies[body.TrackingId] = CreateBodyObject(body.TrackingId);
                 }
                 
-                RefreshBodyObject(body, _Bodies[body.TrackingId], TextArr[i%2]);
+                RefreshBodyObject(body, _Bodies[body.TrackingId]);
             }
             i++;
         }
@@ -153,8 +141,7 @@ public class skeleton : NetworkBehaviour
         for (Kinect.JointType jt = Kinect.JointType.SpineBase; jt <= Kinect.JointType.ThumbRight; jt++)
         {
             GameObject jointObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            jointObj.name = jt.ToString();
-            //jointObj.gameObject.tag = jt.ToString();
+            jointObj.name = "Skeleton"+jt.ToString();
             SphereCollider scj = jointObj.GetComponent<SphereCollider>();
             scj.isTrigger = true;
             
@@ -178,13 +165,14 @@ public class skeleton : NetworkBehaviour
             lr.endWidth = 0.05f;
             
             jointObj.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            jointObj.name = jt.ToString();
+            jointObj.name = "Skeleton" + jt.ToString();
             jointObj.transform.parent = body.transform;
         }
         body.transform.parent = transform;
         body.tag = "SkeletonBody";
         BodyProperties BP = body.AddComponent<BodyProperties>();
         BP.ParentCircle = startCircle;
+        BP.MJ = MJ;
         Rigidbody rb = body.AddComponent<Rigidbody>();
         CapsuleCollider cc = body.AddComponent<CapsuleCollider>();
         cc.isTrigger = true;
@@ -192,12 +180,11 @@ public class skeleton : NetworkBehaviour
         cc.radius = 0.1f;
         StartCircle.player = body;
         rb.useGravity = false;
-
-        //body.AddComponent<CapsuleCollider>();
+        
         return body;
     }
 
-    private void RefreshBodyObject(Kinect.Body body, GameObject bodyObject, Text text)
+    private void RefreshBodyObject(Kinect.Body body, GameObject bodyObject)
     {
         count++;
         Kinect.Joint s = body.Joints[Kinect.JointType.WristLeft];
@@ -219,7 +206,7 @@ public class skeleton : NetworkBehaviour
             {
                 targetJoint = body.Joints[_BoneMap[jt]];
             }
-            Transform jointObj = bodyObject.transform.Find(jt.ToString());
+            Transform jointObj = bodyObject.transform.Find("Skeleton"+jt.ToString());
             jointObj.position = GetVector3FromJoint(sourceJoint);
             if (jointObj.name.Contains("Head")  && count%7==0)
             {

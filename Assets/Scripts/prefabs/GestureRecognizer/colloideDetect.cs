@@ -17,6 +17,7 @@ public class colloideDetect : MonoBehaviour
     {
         if (other.gameObject.name.Contains(this.name) && !other.gameObject.name.Equals(this.name))
         {
+            Debug.Log("Collided" + other.gameObject.name);
             string[] currr = other.name.Split('.');
             cur = float.Parse(currr[1]);
             BodyProperties BP = transform.parent.gameObject.GetComponent<BodyProperties>();
@@ -47,19 +48,18 @@ public class colloideDetect : MonoBehaviour
                 {
                     if (other.name.Contains("Initial") && started == false)
                     {
+                        Debug.Log("First" + gameObject.name);
                         started = true;
                         flag = true;
                         BP.increaseInitial();
                         BP.increaseCollisions();
                         lastcollided = cur;
-                        //Debug.Log(other.name);
                         BP.GD.accuracy = 0;
                     }
                     else if (other.name.Contains("Initial") && started == true)
                     {
+                        Debug.Log("Last" + gameObject.name);
                         flag = false;
-                        //if (lastcollided.Contains("Hand"))
-                       // Debug.Log(other.name);
                         BP.increaseCollisions();
                         BP.increaseInitial();
                         BP.ResetColliders();
@@ -67,10 +67,9 @@ public class colloideDetect : MonoBehaviour
                     }
                     else if(flag)
                     {
+                        Debug.Log("Middle" + gameObject.name);
                         BP.increaseCollisions();
                         lastcollided = cur;
-                        //if(lastcollided.Contains("Hand"))
-                       // Debug.Log(other.name);
                     }
 
                 }

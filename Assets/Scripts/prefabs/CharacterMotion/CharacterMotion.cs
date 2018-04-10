@@ -3,15 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using Kinect = Windows.Kinect;
 using System;
+using UnityEngine.Networking;
 
 
-public class CharacterMotion : MonoBehaviour {
+public class CharacterMotion : NetworkBehaviour {
 
     public GameObject BodySourceManager;
     private Dictionary<ulong, GameObject> _Bodies = new Dictionary<ulong, GameObject>();
     private BodySourceManager _BodyManager;
     private Animator AnimatorComp;
     public static Vector3 RightWrist;
+    public static Vector3 InitialPosition;
+    public static bool CanWork;
 
     private readonly Dictionary<Kinect.JointType, Kinect.JointType> _BoneMap = new Dictionary<Kinect.JointType, Kinect.JointType>()
     {
@@ -105,7 +108,10 @@ public class CharacterMotion : MonoBehaviour {
     // Use this for initialization
     void Start()
     {
+        InitialPosition = transform.position;
+        Debug.Log(InitialPosition);
         AnimatorComp = GetComponent<Animator>();
+        CanWork = false;
 
         InitialSpineBase = AnimatorComp.GetBoneTransform(_CharacaterMap[Kinect.JointType.SpineBase]).rotation;
         InitialSpineMid = AnimatorComp.GetBoneTransform(_CharacaterMap[Kinect.JointType.SpineMid]).rotation;
@@ -129,6 +135,11 @@ public class CharacterMotion : MonoBehaviour {
     // Update is called once per frame
     void Update()
     {
+        if (!CanWork || !isServer)
+        {
+            return;
+        }
+
         if (BodySourceManager == null)
         {
             return;
@@ -254,13 +265,13 @@ public class CharacterMotion : MonoBehaviour {
 
             MoveAvatarJoints(Kinect.JointType.ElbowRight, WristRight * Quaternion.AngleAxis(90, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(90, new Vector3(0, 0, 1)) * Quaternion.AngleAxis(90, new Vector3(1, 0, 0)));
 
-            MoveAvatarJoints(Kinect.JointType.WristRight, HandRight * Quaternion.AngleAxis(90, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(90, new Vector3(0, 0, 1)));
+            //MoveAvatarJoints(Kinect.JointType.WristRight, HandRight * Quaternion.AngleAxis(90, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(90, new Vector3(0, 0, 1)));
 
             MoveAvatarJoints(Kinect.JointType.ShoulderLeft, ElbowLeft * Quaternion.AngleAxis(-90, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(-90, new Vector3(0, 0, 1)));
 
             MoveAvatarJoints(Kinect.JointType.ElbowLeft, WristLeft * Quaternion.AngleAxis(-90, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(-90, new Vector3(0, 0, 1)));
 
-            MoveAvatarJoints(Kinect.JointType.WristLeft, HandLeft * Quaternion.AngleAxis(-90, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(-90, new Vector3(0, 0, 1)));
+            //MoveAvatarJoints(Kinect.JointType.WristLeft, HandLeft * Quaternion.AngleAxis(-90, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(-90, new Vector3(0, 0, 1)));
 
             MoveAvatarJoints(Kinect.JointType.HipRight, KneeRight * Quaternion.AngleAxis(90, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(-0, new Vector3(0, 0, 1)) * Quaternion.AngleAxis(180, new Vector3(1, 0, 0)));
 
@@ -270,7 +281,7 @@ public class CharacterMotion : MonoBehaviour {
 
             MoveAvatarJoints(Kinect.JointType.KneeLeft, AnkleLeft * Quaternion.AngleAxis(-90, new Vector3(0, 1, 0)) * Quaternion.AngleAxis(-0, new Vector3(0, 0, 1)) * Quaternion.AngleAxis(180, new Vector3(1, 0, 0)));
 
-            transform.rotation = q;
+            //transform.rotation = q;
             PlayerMovement(body.Joints[Kinect.JointType.SpineBase]);
             RightWrist = GetVector3FromJoint(body.Joints[Kinect.JointType.WristRight]);
         }
@@ -281,8 +292,8 @@ public class CharacterMotion : MonoBehaviour {
     }
     private void PlayerMovement(Kinect.Joint PlayerPosition)
     {
-        float MoveBuffer = 2.43f;
-        transform.position = new Vector3(PlayerPosition.Position.X, transform.position.y, -(PlayerPosition.Position.Z - MoveBuffer));
+        float MoveBuffer = 2.25f;
+        transform.position = new Vector3(-PlayerPosition.Position.X + InitialPosition.x, InitialPosition.y, (PlayerPosition.Position.Z - MoveBuffer + InitialPosition.z));
     }
 
     private Quaternion VToQ(Windows.Kinect.Vector4 kinectQ, Quaternion comp)
